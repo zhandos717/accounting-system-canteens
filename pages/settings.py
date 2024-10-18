@@ -31,9 +31,11 @@ def settings_page(page: ft.Page):
 
     # Кнопка для сохранения настроек
     save_button = ft.ElevatedButton(
+        adaptive=True,
         content=ft.Text("Сохранить настройки", size=20),
         bgcolor=ft.colors.GREEN_500,
         style=ft.ButtonStyle(
+            color=ft.colors.WHITE,
             bgcolor=ft.colors.GREEN_500,
             shape=ft.RoundedRectangleBorder(radius=10),
             padding=ft.Padding(20, 10, 20, 10),
@@ -43,9 +45,11 @@ def settings_page(page: ft.Page):
 
     # Кнопка для возврата на главную страницу
     back_button = ft.ElevatedButton(
+        adaptive=True,  # a CupertinoButton will be rendered when running on apple-platform
         content=ft.Text("Назад", size=20),
         bgcolor=ft.colors.BLUE_500,
         style=ft.ButtonStyle(
+            color=ft.colors.WHITE,
             bgcolor=ft.colors.BLUE_500,
             shape=ft.RoundedRectangleBorder(radius=10),
             padding=ft.Padding(20, 10, 20, 10),

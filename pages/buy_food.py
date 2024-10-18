@@ -4,11 +4,11 @@ import requests
 from services.capture_photo import capture_photo
 from components.product_list import ProductListComponent
 from components.search import SearchComponent
-from config import load_config
 import threading
 
-config = load_config()
-API_URL = config.get("api_url", "http://localhost:8000")
+from services.http_client import HttpClient
+
+client = HttpClient()
 
 
 def buy_food_page(page: ft.Page):
@@ -16,16 +16,14 @@ def buy_food_page(page: ft.Page):
     primary_color = ft.colors.BLUE_800
     background_color = ft.colors.WHITE
     card_background_color = ft.colors.GREY_100
-    button_confirm_color = ft.colors.GREEN_600
-    button_cancel_color = ft.colors.RED_600
     button_default_color = ft.colors.GREY_200
-    action_button_style = ft.ButtonStyle(color=ft.colors.WHITE)
+    action_button_style = ft.ButtonStyle(color=background_color)
 
     # Уведомление об ошибке (Banner)
     error_banner = ft.Banner(
         bgcolor=ft.colors.RED_500,
-        leading=ft.Icon(ft.icons.ERROR_OUTLINE, color=ft.colors.WHITE, size=40),
-        content=ft.Text("Ошибка", color=ft.colors.WHITE, size=18),
+        leading=ft.Icon(ft.icons.ERROR_OUTLINE, color=background_color, size=40),
+        content=ft.Text("Ошибка", color=background_color, size=18),
         actions=[
             ft.TextButton(text="Закрыть", style=action_button_style, on_click=lambda e: close_banner()),
         ],
@@ -59,14 +57,11 @@ def buy_food_page(page: ft.Page):
 
     def search_products(query):
         try:
-            response = requests.get(f"{API_URL}/products")
-            if response.status_code == 200:
-                all_products = response.json()
-                filtered_products = [p for p in all_products if query.lower() in p['name'].lower()]
-                product_list.controls = ProductListComponent(filtered_products, add_to_cart).controls
-                page.update()
+            products = client.get("/products")  # Используем клиент для GET запроса
+            if products:
+                display_products(products)
             else:
-                show_error(f"Ошибка загрузки продуктов: {response.status_code}")
+                show_error("Ошибка загрузки продуктов.")
         except Exception as e:
             show_error(f"Ошибка подключения: {str(e)}")
 
@@ -118,7 +113,7 @@ def buy_food_page(page: ft.Page):
                         ],
                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN
                     ),
-                    padding=ft.Padding(10, 10, 10, 10),
+                    padding=ft.Padding(5, 5, 5, 5),
                     bgcolor=card_background_color,
                     border_radius=ft.border_radius.all(10),
                     margin=ft.Margin(5, 5, 5, 5),
@@ -164,13 +159,11 @@ def buy_food_page(page: ft.Page):
     # Получение списка продуктов с сервера
     def fetch_products():
         try:
-            response = requests.get(f"{API_URL}/products")
-            if response.status_code == 200:
-                global all_products
-                all_products = response.json()
-                display_products(all_products)
+            products = client.get("/products")  # Используем клиент для GET запроса
+            if products:
+                display_products(products)
             else:
-                show_error(f"Ошибка загрузки продуктов: {response.status_code}")
+                show_error("Ошибка загрузки продуктов.")
             page.update()
         except Exception as e:
             show_error(f"Ошибка подключения: {str(e)}")
@@ -189,7 +182,7 @@ def buy_food_page(page: ft.Page):
             show_error("Корзина пуста")
             return
 
-        response = requests.post(f"{API_URL}/buy_food", json={"employee_id": employee_id, "amount": total_amount})
+        response = client.post('/buy_food', json={"employee_id": employee_id, "amount": total_amount})
         if response.status_code == 200:
             show_error(f"Покупка на сумму {total_amount} тенге успешна для {employee_id}")
             cart_items.clear()
@@ -219,9 +212,10 @@ def buy_food_page(page: ft.Page):
         bgcolor=ft.cupertino_colors.ACTIVE_GREEN,
         content=ft.Row(
             [
-                ft.Icon(name=ft.icons.SHOPPING_CART, color="white"),
-                ft.Text("Подтвердить", color="white"),
+                ft.Icon(name=ft.icons.SHOPPING_CART, color=background_color),
+                ft.Text("Подтвердить", color=background_color),
             ],
+            alignment=ft.MainAxisAlignment.CENTER,
             tight=True,
         ),
         on_click=buy_food

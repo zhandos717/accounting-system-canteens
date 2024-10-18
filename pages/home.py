@@ -12,6 +12,7 @@ def home_page(page: ft.Page):
     button_color = ft.colors.GREEN_500
     background_color = ft.colors.GREY_100
     accent_color = ft.colors.ORANGE_600
+    btn_color = ft.colors.WHITE
 
     # Ввод ID сотрудника
     employee_id_input = ft.TextField(
@@ -52,6 +53,7 @@ def home_page(page: ft.Page):
         ),
         style=ft.ButtonStyle(
             bgcolor=button_color,
+            color=btn_color,
             shape=ft.RoundedRectangleBorder(radius=10),
             padding=ft.Padding(30, 20, 30, 20),
         ),
@@ -60,11 +62,14 @@ def home_page(page: ft.Page):
 
     # Кнопка для перехода на страницу медосмотра
     medical_check_button = ft.ElevatedButton(
+        adaptive=True,  # a CupertinoButton will be rendered when running on apple-platform
+        bgcolor=ft.cupertino_colors.ACTIVE_GREEN,
         content=ft.Row(
             controls=[ft.Icon(ft.icons.MEDICAL_SERVICES, color=ft.colors.WHITE), ft.Text("Медосмотр", size=20)],
             alignment=ft.MainAxisAlignment.CENTER,
         ),
         style=ft.ButtonStyle(
+            color=btn_color,
             bgcolor=accent_color,
             shape=ft.RoundedRectangleBorder(radius=10),
             padding=ft.Padding(20, 10, 20, 10),
@@ -74,11 +79,14 @@ def home_page(page: ft.Page):
 
     # Кнопка для перехода на страницу покупки еды
     buy_food_button = ft.ElevatedButton(
+        adaptive=True,  # a CupertinoButton will be rendered when running on apple-platform
+        bgcolor=ft.cupertino_colors.ACTIVE_GREEN,
         content=ft.Row(
             controls=[ft.Icon(ft.icons.RESTAURANT, color=ft.colors.WHITE), ft.Text("Покупка еды", size=20)],
             alignment=ft.MainAxisAlignment.CENTER,
         ),
         style=ft.ButtonStyle(
+            color=btn_color,
             bgcolor=ft.colors.RED_500,
             shape=ft.RoundedRectangleBorder(radius=10),
             padding=ft.Padding(20, 10, 20, 10),
@@ -88,11 +96,14 @@ def home_page(page: ft.Page):
 
     # Кнопка для перехода на страницу настроек
     settings_button = ft.ElevatedButton(
+        adaptive=True,  # a CupertinoButton will be rendered when running on apple-platform
+        bgcolor=ft.cupertino_colors.ACTIVE_GREEN,
         content=ft.Row(
             controls=[ft.Icon(ft.icons.SETTINGS, color=ft.colors.WHITE), ft.Text("Настройки", size=20)],
             alignment=ft.MainAxisAlignment.CENTER,
         ),
         style=ft.ButtonStyle(
+            color=btn_color,
             bgcolor=ft.colors.BLUE_500,
             shape=ft.RoundedRectangleBorder(radius=10),
             padding=ft.Padding(20, 10, 20, 10),
