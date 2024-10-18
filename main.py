@@ -10,8 +10,9 @@ config = load_config()
 
 def main(page: ft.Page):
     page.title = "Employee Food System"
-    page.window_width = 800
-    page.window_height = 600
+    # Используем новые свойства вместо устаревших
+    page.window.width = 800
+    page.window.height = 600
 
     # Управление маршрутами
     def route_change(route):

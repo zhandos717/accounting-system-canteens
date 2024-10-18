@@ -35,7 +35,7 @@ def medical_page(page: ft.Page):
         page.update()
 
     save_button = ft.ElevatedButton(
-        content=ft.Text("Сохранить настройки", size=20),
+        content=ft.Text("Допустить", size=20),
         bgcolor=ft.colors.GREEN_500,
         style=ft.ButtonStyle(
             bgcolor=ft.colors.GREEN_500,
