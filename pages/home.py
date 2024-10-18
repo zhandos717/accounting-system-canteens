@@ -1,9 +1,11 @@
 import flet as ft
 import requests
 from config import load_config
+from services.http_client import HttpClient
 
 config = load_config()
-API_URL = config.get("api_url", "http://localhost:8000")
+
+client = HttpClient()
 
 
 def home_page(page: ft.Page):
@@ -33,7 +35,7 @@ def home_page(page: ft.Page):
     def record_attendance(e):
         employee_id = employee_id_input.value
         if employee_id:
-            response = requests.post(f"{API_URL}/attendance", json={"employee_id": employee_id})
+            response = client.post("/attendance", json={"employee_id": employee_id})
             if response.status_code == 200:
                 action_log.controls.append(
                     ft.Text(f"Приход записан для {employee_id}", color=ft.colors.GREEN_600, size=18))
@@ -47,7 +49,7 @@ def home_page(page: ft.Page):
     # Кнопка для регистрации прихода
     attendance_button = ft.ElevatedButton(
         content=ft.Row(
-            controls=[ft.Icon(ft.icons.CHECK_CIRCLE, color=ft.colors.WHITE),  ft.Text("Записать приход", size=20)],
+            controls=[ft.Icon(ft.icons.CHECK_CIRCLE, color=ft.colors.WHITE), ft.Text("Записать приход", size=20)],
             alignment=ft.MainAxisAlignment.CENTER,
 
         ),

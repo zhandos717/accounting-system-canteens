@@ -1,10 +1,11 @@
 import flet as ft
 import requests
 from config import load_config
+from services.http_client import HttpClient
 
 config = load_config()
-API_URL = config.get("api_url", "http://localhost:8000")
 
+client = HttpClient()
 
 def medical_page(page: ft.Page):
     primary_color = ft.colors.BLUE_800
@@ -24,7 +25,7 @@ def medical_page(page: ft.Page):
     def medical_check(e):
         employee_id = employee_id_input.value
         if employee_id:
-            response = requests.post(f"{API_URL}/medical_check", json={"employee_id": employee_id})
+            response = client.post("/medical_check", json={"employee_id": employee_id})
             if response.status_code == 200:
                 page.snack_bar = ft.SnackBar(content=ft.Text(f"Медосмотр пройден для {employee_id}"))
             else:
