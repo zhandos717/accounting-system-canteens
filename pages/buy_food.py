@@ -1,6 +1,7 @@
 import flet as ft
 import requests
 
+from services.capture_photo import capture_photo
 from components.product_list import ProductListComponent
 from components.search import SearchComponent
 from config import load_config
@@ -176,7 +177,9 @@ def buy_food_page(page: ft.Page):
 
     # Логика для покупки продуктов
     def buy_food(e):
+
         employee_id = employee_id_input.value
+        photo_success = capture_photo(employee_id)
         if not employee_id:
             show_error("Пожалуйста, введите ID сотрудника")
             return
@@ -217,7 +220,7 @@ def buy_food_page(page: ft.Page):
         content=ft.Row(
             [
                 ft.Icon(name=ft.icons.SHOPPING_CART, color="white"),
-                ft.Text("Подтвердить",color="white"),
+                ft.Text("Подтвердить", color="white"),
             ],
             tight=True,
         ),
