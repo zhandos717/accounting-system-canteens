@@ -1,9 +1,6 @@
 import flet as ft
 import requests
-from config import load_config
 from services.http_client import HttpClient
-
-config = load_config()
 
 client = HttpClient()
 

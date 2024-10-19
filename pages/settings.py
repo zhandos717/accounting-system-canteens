@@ -1,5 +1,9 @@
 import flet as ft
 from config import load_config, save_config
+from services.http_client import HttpClient  # Импортируем клиента для обновления
+
+# Инициализируем глобальный клиент
+client = HttpClient()
 
 
 def settings_page(page: ft.Page):
@@ -16,12 +20,29 @@ def settings_page(page: ft.Page):
         border_radius=ft.border_radius.all(8),
     )
 
+    # Поле для ввода API Token
+    api_url_token = ft.TextField(
+        label="API token",
+        value=config.get("api_token", ""),
+        width=500,
+        text_size=18,
+        filled=True,
+        border_radius=ft.border_radius.all(8),
+    )
+
     # Логика для сохранения настроек
     def save_settings(e):
         new_api_url = api_url_input.value
+        new_api_token = api_url_token.value
         if new_api_url:
-            save_config({"api_url": new_api_url})
-            page.snack_bar = ft.SnackBar(content=ft.Text(f"Настройки сохранены!"))
+            # Сохраняем новые настройки
+            save_config({"api_url": new_api_url, "api_token": new_api_token})
+
+            # Перезагружаем конфигурацию и обновляем глобальный клиент
+            client.update_config()
+
+            # Показываем уведомление об успешном сохранении
+            page.snack_bar = ft.SnackBar(content=ft.Text(f"Настройки сохранены и обновлены!"))
             page.snack_bar.open = True
             page.update()
         else:
@@ -45,7 +66,7 @@ def settings_page(page: ft.Page):
 
     # Кнопка для возврата на главную страницу
     back_button = ft.ElevatedButton(
-        adaptive=True,  # a CupertinoButton will be rendered when running on apple-platform
+        adaptive=True,
         content=ft.Text("Назад", size=20),
         bgcolor=ft.colors.BLUE_500,
         style=ft.ButtonStyle(
@@ -66,6 +87,7 @@ def settings_page(page: ft.Page):
                 padding=ft.Padding(20, 10, 10, 10),
             ),
             ft.Container(api_url_input, alignment=ft.alignment.center, padding=ft.Padding(20, 10, 10, 10)),
+            ft.Container(api_url_token, alignment=ft.alignment.center, padding=ft.Padding(20, 10, 10, 10)),
             ft.Container(
                 ft.Row(
                     controls=[save_button, back_button],

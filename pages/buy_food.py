@@ -1,12 +1,10 @@
+import datetime
 import flet as ft
-import requests
-
-from services.capture_photo import capture_photo
+from components.banner import BannerComponent
 from components.product_list import ProductListComponent
 from components.search import SearchComponent
-import threading
-
 from services.http_client import HttpClient
+from services.capture_photo import capture_photo
 
 client = HttpClient()
 
@@ -15,78 +13,15 @@ def buy_food_page(page: ft.Page):
     # Основные цвета и стили
     primary_color = ft.colors.BLUE_800
     background_color = ft.colors.WHITE
-    card_background_color = ft.colors.GREY_100
+    card_background_color = ft.colors.GREY_200
     button_default_color = ft.colors.GREY_200
-    action_button_style = ft.ButtonStyle(color=background_color)
 
     # Уведомление об ошибке (Banner)
-    error_banner = ft.Banner(
-        bgcolor=ft.colors.RED_500,
-        leading=ft.Icon(ft.icons.ERROR_OUTLINE, color=background_color, size=40),
-        content=ft.Text("Ошибка", color=background_color, size=18),
-        actions=[
-            ft.TextButton(text="Закрыть", style=action_button_style, on_click=lambda e: close_banner()),
-        ],
-    )
-
-    def add_to_cart(product):
-        for item in cart_items:
-            if item["name"] == product["name"]:
-                item["quantity"] += 1
-                break
-        else:
-            cart_items.append({"name": product["name"], "price": product["price"], "quantity": 1})
-        update_cart()
-
-    product_list = ProductListComponent(products=[], on_add_to_cart=add_to_cart)
-
-    # Функция для показа уведомлений с авто-закрытием
-    def show_error(message):
-        error_banner.content.value = message
-        page.banner = error_banner
-        page.banner.open = True
-        page.update()
-
-        # Запускаем таймер для авто-закрытия баннера через 3 секунды
-        threading.Timer(3.0, close_banner).start()
-
-    # Закрытие баннера
-    def close_banner():
-        page.banner.open = False
-        page.update()
-
-    def search_products(query):
-        try:
-            products = client.get("/products")  # Используем клиент для GET запроса
-            if products:
-                display_products(products)
-            else:
-                show_error("Ошибка загрузки продуктов.")
-        except Exception as e:
-            show_error(f"Ошибка подключения: {str(e)}")
-
-    # Поле поиска продуктов
-    search_input = SearchComponent(on_search=search_products)
-
-    # Список продуктов
-    products_list = ft.ListView(expand=True, spacing=10, padding=ft.Padding(10, 10, 10, 10))
-    all_products = []  # Список для хранения всех продуктов
+    show_error = BannerComponent(page)
 
     # Корзина
     cart_items = []
     cart_total = ft.Text("Итого: 0 тенге", size=24, color=primary_color, weight=ft.FontWeight.BOLD)
-
-    # Ввод ID сотрудника (сканирование)
-    employee_id_input = ft.TextField(
-        label="Сканируйте QR-код сотрудника",
-        prefix_icon=ft.icons.QR_CODE_SCANNER,
-        width=600,
-        height=60,
-        text_size=20,
-        filled=True,
-
-        border_radius=ft.border_radius.all(12),
-    )
 
     # Обновление отображения корзины
     def update_cart():
@@ -113,15 +48,19 @@ def buy_food_page(page: ft.Page):
                         ],
                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN
                     ),
-                    padding=ft.Padding(5, 5, 5, 5),
+                    padding=ft.Padding(10, 10, 10, 10),
                     bgcolor=card_background_color,
                     border_radius=ft.border_radius.all(10),
-                    margin=ft.Margin(5, 5, 5, 5),
                 )
             )
         page.update()
 
-    # Добавление продукта в корзину с увеличением количества, если уже добавлен
+    # Функция для удаления продукта из корзины
+    def remove_from_cart(index):
+        del cart_items[index]
+        update_cart()
+
+    # Функция для добавления продукта в корзину
     def add_to_cart(product):
         for item in cart_items:
             if item["name"] == product["name"]:
@@ -131,46 +70,36 @@ def buy_food_page(page: ft.Page):
             cart_items.append({"name": product["name"], "price": product["price"], "quantity": 1})
         update_cart()
 
-    # Удаление продукта из корзины
-    def remove_from_cart(index):
-        del cart_items[index]
-        update_cart()
+    # Создание компонента ProductListComponent и передача функции add_to_cart
+    product_list = ProductListComponent(products=[], on_add_to_cart=add_to_cart)
 
-    # Отображение продуктов в списке
-    def display_products(products):
-        products_list.controls.clear()
-        for product in products:
-            product_button = ft.ElevatedButton(
-                content=ft.Text(f"{product['name']} - {product['price']} тенге", size=20),
-                on_click=lambda e, p=product: add_to_cart(p),
-                bgcolor=button_default_color,
-                height=70,
-                width=300,
-                style=ft.ButtonStyle(
-                    bgcolor=button_default_color,
-                    shape=ft.RoundedRectangleBorder(radius=12),
-                    padding=ft.Padding(20, 10, 20, 10),
-                    color=ft.colors.BLACK,
-                )
-            )
-            products_list.controls.append(product_button)
-        page.update()
-
-    # Получение списка продуктов с сервера
-    def fetch_products():
+    # Поле поиска продуктов
+    def search_products(query):
         try:
-            products = client.get("/products")  # Используем клиент для GET запроса
+            products = client.get("/products")
             if products:
-                display_products(products)
+                filtered_products = [p for p in products if query.lower() in p['name'].lower()]
+                product_list.update(filtered_products)
             else:
                 show_error("Ошибка загрузки продуктов.")
-            page.update()
         except Exception as e:
             show_error(f"Ошибка подключения: {str(e)}")
 
-    # Логика для покупки продуктов
-    def buy_food(e):
+    search_input = SearchComponent(on_search=search_products)
 
+    # Список товаров в корзине
+    cart_items_list = ft.ListView(expand=True, spacing=10, padding=ft.Padding(10, 10, 10, 10))
+
+    # Ввод ID сотрудника (сканирование)
+    employee_id_input = ft.TextField(
+        label="Сканируйте QR-код сотрудника",
+        prefix_icon=ft.icons.QR_CODE_SCANNER,
+        text_size=20,
+        border_radius=ft.border_radius.all(12),
+    )
+
+    # Функция для подтверждения покупки
+    def buy_food(e):
         employee_id = employee_id_input.value
         photo_success = capture_photo(employee_id)
         if not employee_id:
@@ -191,8 +120,54 @@ def buy_food_page(page: ft.Page):
             show_error(f"Ошибка: {response.json()['detail']}")
         page.update()
 
-    # Список товаров в корзине
-    cart_items_list = ft.ListView(expand=True, spacing=10, padding=ft.Padding(10, 10, 10, 10))
+    # Функция для захвата и отображения изображения с камеры
+    def capture_and_display_photo(employee_id, page, image_control):
+        photo_success = capture_photo(employee_id)
+        if photo_success:
+            current_date = datetime.datetime.now().strftime('%Y-%m-%d')
+            image_control.src = f"./photos/{employee_id}/{current_date}/{datetime.datetime.now().strftime('%H-%M-%S')}.png"
+            page.update()
+
+    # Функция для открытия диалога подтверждения
+    def open_confirm_dialog(e):
+        page.dialog = confirm_dialog
+        confirm_dialog.open = True
+        page.update()
+
+    # Функция для закрытия диалога подтверждения
+    def close_confirm_dialog(e=None):
+        confirm_dialog.open = False
+        page.update()
+
+    # Создание диалога подтверждения
+    photo_control = ft.Image(src="", width=300, height=300)
+    confirm_dialog = ft.AlertDialog(
+        modal=True,
+        title=ft.Text("Подтверждение покупки с фото", size=24),
+        content=ft.Column(
+            controls=[
+                ft.Text("Пожалуйста, сделайте фото для подтверждения покупки."),
+                photo_control,
+                ft.ElevatedButton(
+                    text="Сделать фото",
+                    on_click=lambda e: capture_and_display_photo("employee123", page, photo_control),
+                    bgcolor=ft.colors.BLUE_600,
+                    color=ft.colors.WHITE,
+                )
+            ],
+        ),
+        actions=[
+            ft.TextButton("Отмена", on_click=close_confirm_dialog),
+            ft.ElevatedButton("Подтвердить", on_click=lambda e: confirm_purchase(e)),
+        ],
+        actions_alignment=ft.MainAxisAlignment.END,
+    )
+
+    # Функция для подтверждения покупки
+    def confirm_purchase(e):
+        buy_food(e)
+        close_confirm_dialog()
+        show_error("Покупка успешно подтверждена!")
 
     # Кнопка для возврата на главную страницу
     back_icon_button = ft.IconButton(
@@ -208,7 +183,7 @@ def buy_food_page(page: ft.Page):
 
     # Кнопка для подтверждения покупки
     confirm_button = ft.ElevatedButton(
-        adaptive=True,  # a CupertinoButton will be rendered when running on apple-platform
+        adaptive=True,
         bgcolor=ft.cupertino_colors.ACTIVE_GREEN,
         content=ft.Row(
             [
@@ -218,17 +193,29 @@ def buy_food_page(page: ft.Page):
             alignment=ft.MainAxisAlignment.CENTER,
             tight=True,
         ),
-        on_click=buy_food
+        on_click=open_confirm_dialog
     )
 
     # Вызываем функцию получения продуктов при открытии страницы
+    def fetch_products():
+        try:
+            products = client.get("/products")
+
+            if products:
+                product_list.update_products(products)
+            else:
+                show_error("Ошибка загрузки продуктов.")
+            page.update()
+        except Exception as e:
+            show_error(f"Ошибка подключения: {str(e)}")
+
     fetch_products()
 
     # Разделяем экран на две части
     return ft.View(
         "/buy_food",
         controls=[
-            error_banner,  # Баннер для ошибок, отображается сверху
+            # Баннер для ошибок
             ft.Row(
                 controls=[
                     # Левая часть (поиск и продукты)
@@ -238,11 +225,11 @@ def buy_food_page(page: ft.Page):
                                 ft.Row(
                                     controls=[back_icon_button,
                                               ft.Text("Покупка продуктов", size=20, weight=ft.FontWeight.BOLD,
-                                                      color=primary_color), ],
+                                                      color=primary_color)],
                                     alignment=ft.MainAxisAlignment.START,
                                 ),
-                                search_input,  # Поле поиска продуктов
-                                products_list,  # Отображение списка продуктов
+                                search_input,
+                                product_list,  # Отображение списка продуктов
                             ],
                             spacing=20,
                             alignment=ft.MainAxisAlignment.CENTER,
@@ -250,16 +237,15 @@ def buy_food_page(page: ft.Page):
                         ),
                         expand=True,
                         padding=ft.Padding(20, 10, 10, 10),
-                        alignment=ft.alignment.center
                     ),
                     # Правая часть (корзина, ввод ID и кнопки)
                     ft.Container(
                         content=ft.Column(
                             controls=[
                                 ft.Text("Корзина", size=32, weight=ft.FontWeight.BOLD, color=primary_color),
-                                cart_items_list,  # Список товаров в корзине
-                                cart_total,  # Итого по корзине
-                                employee_id_input,  # Ввод ID сотрудника перемещен сюда
+                                cart_items_list,
+                                cart_total,
+                                employee_id_input,
                                 confirm_button
                             ],
                             spacing=20,
@@ -268,7 +254,6 @@ def buy_food_page(page: ft.Page):
                         ),
                         expand=True,
                         padding=ft.Padding(20, 10, 10, 10),
-                        alignment=ft.alignment.center
                     ),
                 ],
                 expand=True,

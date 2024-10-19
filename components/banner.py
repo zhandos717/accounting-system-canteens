@@ -13,6 +13,8 @@ def BannerComponent(page):
 
     def show_error(message):
         error_banner.content.value = message
+
+        print(message)
         page.banner = error_banner
         page.banner.open = True
         page.update()
