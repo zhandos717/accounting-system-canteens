@@ -3,7 +3,6 @@
 import datetime
 import flet as ft
 from components.banner import BannerComponent
-from components.product_list import ProductListComponent
 from components.search import SearchComponent
 from components.photo_modal import PhotoModalComponent  # Import the photo modal
 from services.http_client import HttpClient
@@ -22,6 +21,8 @@ def buy_food_page(page: ft.Page):
     # Корзина
     cart_items = []
     cart_total = ft.Text("Итого: 0 тенге", size=24, color=primary_color, weight=ft.FontWeight.BOLD)
+
+    products_list = ft.ListView(expand=True, spacing=10, padding=ft.Padding(10, 10, 10, 10))
 
     # Обновление отображения корзины
     def update_cart():
@@ -70,8 +71,32 @@ def buy_food_page(page: ft.Page):
             cart_items.append({"name": product["name"], "price": product["price"], "quantity": 1})
         update_cart()
 
-    # Создание компонента ProductListComponent и передача функции add_to_cart
-    product_list = ProductListComponent(products=[], on_add_to_cart=add_to_cart)
+
+    def display_products(products):
+        products_list.controls.clear()
+        for product in products:
+            product_button = ft.ElevatedButton(
+                content=ft.Row(
+                    controls=[
+                        ft.Text(f"{product['name']}", size=16, weight=ft.FontWeight.BOLD, color=ft.colors.BLACK),
+                        ft.Container(expand=True),  # Используем контейнер с expand=True для разделения
+                        ft.Text(f"{product['price']} тенге", size=14, color=ft.colors.BLACK),
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN
+                ),
+                on_click=lambda e, p=product: add_to_cart(p),
+                bgcolor=ft.colors.WHITE,
+                height=70,
+                width=300,
+                style=ft.ButtonStyle(
+                    bgcolor=ft.colors.WHITE,
+                    shape=ft.RoundedRectangleBorder(radius=12),
+                    padding=ft.Padding(20, 10, 20, 10),
+                    color=ft.colors.BLACK,
+                )
+            )
+            products_list.controls.append(product_button)
+        page.update()
 
     # Поле поиска продуктов
     def search_products(query):
@@ -79,7 +104,7 @@ def buy_food_page(page: ft.Page):
             products = client.get("/products")
             if products:
                 filtered_products = [p for p in products if query.lower() in p['name'].lower()]
-                product_list.update_products(filtered_products)
+                display_products(filtered_products)
             else:
                 show_error("Ошибка загрузки продуктов.")
         except Exception as e:
@@ -165,12 +190,14 @@ def buy_food_page(page: ft.Page):
         on_click=open_confirm_dialog
     )
 
+
+
     # Вызываем функцию получения продуктов при открытии страницы
     def fetch_products():
         try:
             products = client.get("/products")
             if products:
-                product_list.update_products(products)
+                display_products(products)
             else:
                 show_error("Ошибка загрузки продуктов.")
             page.update()
@@ -197,7 +224,7 @@ def buy_food_page(page: ft.Page):
                                     alignment=ft.MainAxisAlignment.START,
                                 ),
                                 search_input,
-                                product_list,  # Отображение списка продуктов
+                                products_list,  # Отображение списка продуктов
                             ],
                             spacing=20,
                             alignment=ft.MainAxisAlignment.CENTER,

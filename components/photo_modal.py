@@ -39,7 +39,7 @@ class PhotoModalComponent(ft.AlertDialog):
         )
 
         self.actions = [
-            ft.TextButton("Отмена", on_click=self.close_modal),
+            ft.ElevatedButton("Отмена", on_click=self.close_modal),
             ft.ElevatedButton("Подтвердить", on_click=self.confirm_purchase),
         ]
         self.actions_alignment = ft.MainAxisAlignment.END
