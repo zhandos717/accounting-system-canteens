@@ -1,20 +1,20 @@
+# buy_food_page.py
+
 import datetime
 import flet as ft
 from components.banner import BannerComponent
 from components.product_list import ProductListComponent
 from components.search import SearchComponent
+from components.photo_modal import PhotoModalComponent  # Import the photo modal
 from services.http_client import HttpClient
-from services.capture_photo import capture_photo
 
 client = HttpClient()
-
 
 def buy_food_page(page: ft.Page):
     # Основные цвета и стили
     primary_color = ft.colors.BLUE_800
     background_color = ft.colors.WHITE
     card_background_color = ft.colors.GREY_200
-    button_default_color = ft.colors.GREY_200
 
     # Уведомление об ошибке (Banner)
     show_error = BannerComponent(page)
@@ -37,13 +37,13 @@ def buy_food_page(page: ft.Page):
                         controls=[
                             ft.Text(f"{item['name']} (x{item['quantity']})", size=16, weight=ft.FontWeight.BOLD,
                                     color=ft.colors.BLACK),
-                            ft.Container(expand=True),  # Используем контейнер с expand=True для разделения
+                            ft.Container(expand=True),
                             ft.Text(f"{item['price'] * item['quantity']} тенге", size=14, color=ft.colors.BLACK),
                             ft.IconButton(
                                 icon=ft.icons.DELETE,
                                 icon_size=20,
                                 tooltip="Удалить",
-                                on_click=lambda e, index=idx: remove_from_cart(index)  # Функция удаления
+                                on_click=lambda e, index=idx: remove_from_cart(index)
                             ),
                         ],
                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN
@@ -79,7 +79,7 @@ def buy_food_page(page: ft.Page):
             products = client.get("/products")
             if products:
                 filtered_products = [p for p in products if query.lower() in p['name'].lower()]
-                product_list.update(filtered_products)
+                product_list.update_products(filtered_products)
             else:
                 show_error("Ошибка загрузки продуктов.")
         except Exception as e:
@@ -100,8 +100,8 @@ def buy_food_page(page: ft.Page):
 
     # Функция для подтверждения покупки
     def buy_food(e):
+        print(e)
         employee_id = employee_id_input.value
-        photo_success = capture_photo(employee_id)
         if not employee_id:
             show_error("Пожалуйста, введите ID сотрудника")
             return
@@ -120,54 +120,23 @@ def buy_food_page(page: ft.Page):
             show_error(f"Ошибка: {response.json()['detail']}")
         page.update()
 
-    # Функция для захвата и отображения изображения с камеры
-    def capture_and_display_photo(employee_id, page, image_control):
-        photo_success = capture_photo(employee_id)
-        if photo_success:
-            current_date = datetime.datetime.now().strftime('%Y-%m-%d')
-            image_control.src = f"./photos/{employee_id}/{current_date}/{datetime.datetime.now().strftime('%H-%M-%S')}.png"
-            page.update()
-
     # Функция для открытия диалога подтверждения
     def open_confirm_dialog(e):
-        page.dialog = confirm_dialog
-        confirm_dialog.open = True
+        photo_modal.start_camera_stream()  # Start the camera stream
+        page.dialog = photo_modal
+        photo_modal.open = True
         page.update()
-
-    # Функция для закрытия диалога подтверждения
-    def close_confirm_dialog(e=None):
-        confirm_dialog.open = False
-        page.update()
-
-    # Создание диалога подтверждения
-    photo_control = ft.Image(src="", width=300, height=300)
-    confirm_dialog = ft.AlertDialog(
-        modal=True,
-        title=ft.Text("Подтверждение покупки с фото", size=24),
-        content=ft.Column(
-            controls=[
-                ft.Text("Пожалуйста, сделайте фото для подтверждения покупки."),
-                photo_control,
-                ft.ElevatedButton(
-                    text="Сделать фото",
-                    on_click=lambda e: capture_and_display_photo("employee123", page, photo_control),
-                    bgcolor=ft.colors.BLUE_600,
-                    color=ft.colors.WHITE,
-                )
-            ],
-        ),
-        actions=[
-            ft.TextButton("Отмена", on_click=close_confirm_dialog),
-            ft.ElevatedButton("Подтвердить", on_click=lambda e: confirm_purchase(e)),
-        ],
-        actions_alignment=ft.MainAxisAlignment.END,
-    )
 
     # Функция для подтверждения покупки
-    def confirm_purchase(e):
-        buy_food(e)
-        close_confirm_dialog()
+    def confirm_purchase():
+        buy_food(None)
         show_error("Покупка успешно подтверждена!")
+
+    # Create an instance of the photo modal
+    photo_modal = PhotoModalComponent(
+        employee_id="employee123",
+        on_confirm=confirm_purchase
+    )
 
     # Кнопка для возврата на главную страницу
     back_icon_button = ft.IconButton(
@@ -200,7 +169,6 @@ def buy_food_page(page: ft.Page):
     def fetch_products():
         try:
             products = client.get("/products")
-
             if products:
                 product_list.update_products(products)
             else:
