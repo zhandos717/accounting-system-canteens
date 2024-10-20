@@ -3,6 +3,7 @@ import os
 
 import cv2
 
+
 class CameraManager:
     def __init__(self, camera_index):
         self.camera_index = camera_index
@@ -30,18 +31,24 @@ class CameraManager:
 
     def capture_and_save_photo(self, directory, filename):
         """Захватить фото и сохранить его в указанную директорию."""
-        frame = self.capture_frame()
+        cap = cv2.VideoCapture(self.camera_index)
+        if not cap.isOpened():
+            print("Ошибка: не удалось открыть камеру")
+            return
+
+        ret, frame = cap.read()
+
         if frame is None:
             return None
 
         # Ensure the directory exists
         os.makedirs(directory, exist_ok=True)
 
-        # Construct the full file path
-        file_path = os.path.join(directory, filename)
+        photo_path = f"{directory}/{filename}"
 
         # Save the captured frame to the specified path
-        success = cv2.imwrite(file_path, frame)
+        success = cv2.imwrite(photo_path, frame)
+
         if not success:
             raise RuntimeError("Ошибка: не удалось сохранить фото")
-        return file_path
+        return photo_path
