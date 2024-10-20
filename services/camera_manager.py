@@ -4,7 +4,7 @@ import os
 import cv2
 
 class CameraManager:
-    def __init__(self, camera_index=0):
+    def __init__(self, camera_index):
         self.camera_index = camera_index
         self.cap = None
 

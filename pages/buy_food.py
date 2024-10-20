@@ -144,9 +144,9 @@ def buy_food_page(page: ft.Page):
         now = datetime.now()
         img_name = now.strftime("%d.%m.%Y-%H:%M:%S")
         photo_filename = f"{img_name}.png"
-
+        camera_index = int(config.get('camera_index', 0))
         try:
-            with CameraManager(camera_index=1) as camera:
+            with CameraManager(camera_index= camera_index) as camera:
                 photo_path = camera.capture_and_save_photo(path, photo_filename)
 
                 if not photo_path:
