@@ -79,17 +79,16 @@ class PhotoModalComponent(ft.AlertDialog):
             if not ret:
                 break
 
-            jpg_as_text = self.frame_to_base64(frame)
+            # Convert frame to JPEG and encode to base64
+            _, buffer = cv2.imencode('.jpg', frame)
+            jpg_as_text = base64.b64encode(buffer.tobytes()).decode('utf-8')
+
+            # Update the image control in Flet
             self.photo_control.src_base64 = jpg_as_text
             self.update()
 
         cap.release()
         cv2.destroyAllWindows()
-
-    def frame_to_base64(self, frame):
-        """Convert a frame to a base64-encoded JPEG string."""
-        _, buffer = cv2.imencode('.jpg', frame)
-        return base64.b64encode(buffer.tobytes()).decode('utf-8')
 
     def save_photo(self, frame):
         """Save a captured frame to a file and return the file path."""

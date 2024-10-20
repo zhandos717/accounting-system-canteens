@@ -9,6 +9,7 @@ from services.http_client import HttpClient
 
 client = HttpClient()
 
+
 def buy_food_page(page: ft.Page):
     # Основные цвета и стили
     primary_color = ft.colors.BLUE_800
@@ -71,7 +72,6 @@ def buy_food_page(page: ft.Page):
             cart_items.append({"name": product["name"], "price": product["price"], "quantity": 1})
         update_cart()
 
-
     def display_products(products):
         products_list.controls.clear()
         for product in products:
@@ -124,9 +124,25 @@ def buy_food_page(page: ft.Page):
     )
 
     # Функция для подтверждения покупки
-    def buy_food(e):
+    def confirm_purchase(e):
         print(e)
         employee_id = employee_id_input.value
+
+        response = client.post('/buy_food', json={"employee_id": employee_id, "items": cart_items})
+
+        if response.status_code != 200:
+            show_error(f"Ошибка: {response.json()['detail']}")
+        else:
+            show_error(f"Покупка прошла успешна для {employee_id}")
+            cart_items.clear()
+            update_cart()
+
+        page.update()
+
+    # Функция для открытия диалога подтверждения
+    def open_confirm_dialog(e):
+        employee_id = employee_id_input.value
+
         if not employee_id:
             show_error("Пожалуйста, введите ID сотрудника")
             return
@@ -136,28 +152,11 @@ def buy_food_page(page: ft.Page):
             show_error("Корзина пуста")
             return
 
-        response = client.post('/buy_food', json={"employee_id": employee_id, "amount": total_amount})
-        if response.status_code == 200:
-            show_error(f"Покупка на сумму {total_amount} тенге успешна для {employee_id}")
-            cart_items.clear()
-            update_cart()
-        else:
-            show_error(f"Ошибка: {response.json()['detail']}")
-        page.update()
-
-    # Функция для открытия диалога подтверждения
-    def open_confirm_dialog(e):
         photo_modal.start_camera_stream()  # Start the camera stream
         page.dialog = photo_modal
         photo_modal.open = True
         page.update()
 
-    # Функция для подтверждения покупки
-    def confirm_purchase():
-        buy_food(None)
-        show_error("Покупка успешно подтверждена!")
-
-    # Create an instance of the photo modal
     photo_modal = PhotoModalComponent(
         employee_id="employee123",
         on_confirm=confirm_purchase
@@ -190,19 +189,9 @@ def buy_food_page(page: ft.Page):
         on_click=open_confirm_dialog
     )
 
-
-
     # Вызываем функцию получения продуктов при открытии страницы
     def fetch_products():
-        try:
-            products = client.get("/products")
-            if products:
-                display_products(products)
-            else:
-                show_error("Ошибка загрузки продуктов.")
-            page.update()
-        except Exception as e:
-            show_error(f"Ошибка подключения: {str(e)}")
+        search_products("")
 
     fetch_products()
 
