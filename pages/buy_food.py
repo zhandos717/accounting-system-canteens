@@ -1,4 +1,5 @@
 # buy_food_page.py
+from datetime import datetime
 
 import flet as ft
 from components.banner import BannerComponent
@@ -124,6 +125,8 @@ def buy_food_page(page: ft.Page):
 
     # Функция для подтверждения покупки
     def confirm_purchase(e):
+        show_error(f"Ошибка соединения с сервером")
+        return
 
         employee_id = employee_id_input.value
         response = client.post('/buy_food', json={"employee_id": employee_id, "items": cart_items})
@@ -153,20 +156,19 @@ def buy_food_page(page: ft.Page):
                 show_error("Пожалуйста, введите ID сотрудника")
                 return
 
+            path = f"./photos/employees/{employee_id}"
+
+            now = datetime.now()
+            img_name = now.strftime("%d.%m.%Y-%H:%M:%S")
+            photo_path = f"/{img_name}.png"
+
             # Создаем экземпляр PhotoModalComponent
             photo_modal = PhotoModalComponent(
-                employee_id=employee_id,
-                on_confirm=lambda event: confirm_purchase(event),  # Передаем event как параметр
+                folder=path,
+                image_name=photo_path
             )
 
-            # Добавляем модальное окно на страницу (в overlay)
-            page.overlay.append(photo_modal)
-            page.dialog = photo_modal
-
-            # Открываем модальное окно и обновляем страницу
-            photo_modal.open = True
-            page.update()  # Теперь модальное окно добавлено на страницу, и можно его обновлять
-
+            page.open(photo_modal)
             # Запускаем стрим камеры
             photo_modal.start_camera_stream()
 
@@ -197,7 +199,7 @@ def buy_food_page(page: ft.Page):
             alignment=ft.MainAxisAlignment.CENTER,
             tight=True,
         ),
-        on_click=confirm_purchase
+        on_click=open_confirm_dialog
     )
 
     # Вызываем функцию получения продуктов при открытии страницы
