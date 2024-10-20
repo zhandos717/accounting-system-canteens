@@ -140,27 +140,38 @@ def buy_food_page(page: ft.Page):
         page.update()
 
     # Функция для открытия диалога подтверждения
+    # buy_food_page.py
     def open_confirm_dialog(e):
-        employee_id = employee_id_input.value
+        try:
+            total_amount = sum([item["price"] * item["quantity"] for item in cart_items])
+            if total_amount == 0:
+                show_error("Корзина пуста")
+                return
 
-        if not employee_id:
-            show_error("Пожалуйста, введите ID сотрудника")
-            return
+            employee_id = employee_id_input.value
+            if not employee_id:
+                show_error("Пожалуйста, введите ID сотрудника")
+                return
 
-        total_amount = sum([item["price"] * item["quantity"] for item in cart_items])
-        if total_amount == 0:
-            show_error("Корзина пуста")
-            return
+            # Создаем экземпляр PhotoModalComponent
+            photo_modal = PhotoModalComponent(
+                employee_id=employee_id,
+                on_confirm=lambda event: confirm_purchase(event)  # Передаем event как параметр
+            )
 
-        photo_modal.start_camera_stream()  # Start the camera stream
-        page.dialog = photo_modal
-        photo_modal.open = True
-        page.update()
+            # Добавляем модальное окно на страницу (в overlay)
+            page.overlay.append(photo_modal)
+            page.dialog = photo_modal
 
-    photo_modal = PhotoModalComponent(
-        employee_id="employee123",
-        on_confirm=confirm_purchase
-    )
+            # Открываем модальное окно и обновляем страницу
+            photo_modal.open = True
+            page.update()  # Теперь модальное окно добавлено на страницу, и можно его обновлять
+
+            # Запускаем стрим камеры
+            photo_modal.start_camera_stream()
+
+        except Exception as ex:
+            show_error(f"Ошибка при открытии модального окна: {str(ex)}")
 
     # Кнопка для возврата на главную страницу
     back_icon_button = ft.IconButton(

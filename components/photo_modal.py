@@ -28,7 +28,7 @@ class PhotoModalComponent(ft.AlertDialog):
                 self.photo_control,
                 ft.ElevatedButton(
                     text="Сделать фото",
-                    on_click=lambda e: self.capture_and_display_photo(),
+                    on_click=self.capture_and_display_photo,
                     bgcolor=ft.colors.BLUE_600,
                     color=ft.colors.WHITE,
                 )
@@ -44,23 +44,6 @@ class PhotoModalComponent(ft.AlertDialog):
         ]
         self.actions_alignment = ft.MainAxisAlignment.END
 
-    def capture_and_display_photo(self):
-        """Capture a single photo and display it in the modal."""
-        cap = cv2.VideoCapture(0)
-
-        if not cap.isOpened():
-            print("Ошибка: не удалось открыть камеру")
-            return
-
-        ret, frame = cap.read()
-        if ret:
-            photo_path = self.save_photo(frame)
-            self.photo_control.src = photo_path
-            self.update()
-
-        cap.release()
-        cv2.destroyAllWindows()
-
     def start_camera_stream(self):
         """Start a thread to capture and display the camera stream."""
         self.stop_event.clear()
@@ -71,24 +54,37 @@ class PhotoModalComponent(ft.AlertDialog):
         cap = cv2.VideoCapture(0)
 
         if not cap.isOpened():
-            print("Ошибка: не удалось открыть камеру")
-            return
+            return  # Do not proceed if the camera can't be opened
 
         while not self.stop_event.is_set():
             ret, frame = cap.read()
             if not ret:
-                break
+                continue
 
             # Convert frame to JPEG and encode to base64
             _, buffer = cv2.imencode('.jpg', frame)
             jpg_as_text = base64.b64encode(buffer.tobytes()).decode('utf-8')
 
-            # Update the image control in Flet
+            # Set the base64 string with the proper prefix
             self.photo_control.src_base64 = jpg_as_text
             self.update()
 
         cap.release()
-        cv2.destroyAllWindows()
+
+    def capture_and_display_photo(self, e=None):
+        """Capture a single photo and display it in the modal."""
+        cap = cv2.VideoCapture(0)
+
+        if not cap.isOpened():
+            return
+
+        ret, frame = cap.read()
+        if ret:
+            photo_path = self.save_photo(frame)
+            self.photo_control.src = photo_path
+            self.update()
+
+        cap.release()
 
     def save_photo(self, frame):
         """Save a captured frame to a file and return the file path."""
@@ -101,7 +97,7 @@ class PhotoModalComponent(ft.AlertDialog):
 
     def confirm_purchase(self, e=None):
         """Handle the confirmation of the purchase."""
-        self.on_confirm()
+        self.on_confirm(e)
         self.close_modal()
 
     def close_modal(self, e=None):
