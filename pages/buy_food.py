@@ -1,6 +1,5 @@
 # buy_food_page.py
 
-import datetime
 import flet as ft
 from components.banner import BannerComponent
 from components.search import SearchComponent
@@ -125,17 +124,18 @@ def buy_food_page(page: ft.Page):
 
     # Функция для подтверждения покупки
     def confirm_purchase(e):
-        print(e)
-        employee_id = employee_id_input.value
 
+        employee_id = employee_id_input.value
         response = client.post('/buy_food', json={"employee_id": employee_id, "items": cart_items})
 
-        if response.status_code != 200:
-            show_error(f"Ошибка: {response.json()['detail']}")
-        else:
+        if response is None:
+            show_error(f"Ошибка соединения с сервером")
+        elif response.status_code == 200:
             show_error(f"Покупка прошла успешна для {employee_id}")
             cart_items.clear()
             update_cart()
+        else:
+            show_error(f"Ошибка: {response.json()['message']}")
 
         page.update()
 
@@ -156,7 +156,7 @@ def buy_food_page(page: ft.Page):
             # Создаем экземпляр PhotoModalComponent
             photo_modal = PhotoModalComponent(
                 employee_id=employee_id,
-                on_confirm=lambda event: confirm_purchase(event)  # Передаем event как параметр
+                on_confirm=lambda event: confirm_purchase(event),  # Передаем event как параметр
             )
 
             # Добавляем модальное окно на страницу (в overlay)
@@ -197,7 +197,7 @@ def buy_food_page(page: ft.Page):
             alignment=ft.MainAxisAlignment.CENTER,
             tight=True,
         ),
-        on_click=open_confirm_dialog
+        on_click=confirm_purchase
     )
 
     # Вызываем функцию получения продуктов при открытии страницы

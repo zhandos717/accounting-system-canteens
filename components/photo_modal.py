@@ -11,6 +11,7 @@ class PhotoModalComponent(ft.AlertDialog):
         self.employee_id = employee_id
         self.on_confirm = on_confirm
         self.stop_event = threading.Event()  # Initialize stop_event
+        self.photo_path = None  # Store the path of the captured photo
 
         # Create an image control to show the camera stream
         self.photo_control = ft.Image(src="", width=300, height=300)
@@ -28,7 +29,7 @@ class PhotoModalComponent(ft.AlertDialog):
                 self.photo_control,
                 ft.ElevatedButton(
                     text="Сделать фото",
-                    on_click=self.capture_and_display_photo,
+                    on_click=lambda e: self.capture_and_display_photo(),
                     bgcolor=ft.colors.BLUE_600,
                     color=ft.colors.WHITE,
                 )
@@ -39,10 +40,27 @@ class PhotoModalComponent(ft.AlertDialog):
         )
 
         self.actions = [
-            ft.ElevatedButton("Отмена", on_click=self.close_modal),
-            ft.ElevatedButton("Подтвердить", on_click=self.confirm_purchase),
+            ft.ElevatedButton("Отмена", on_click=lambda e: self.close_modal()),  # Ensure correct call to close_modal
+            ft.ElevatedButton("Подтвердить", on_click=lambda e: self.confirm_photo_capture(e)),
         ]
         self.actions_alignment = ft.MainAxisAlignment.END
+
+    def capture_and_display_photo(self):
+        """Capture a single photo and display it in the modal."""
+        cap = cv2.VideoCapture(0)
+
+        if not cap.isOpened():
+            print("Ошибка: не удалось открыть камеру")
+            return
+
+        ret, frame = cap.read()
+        if ret:
+            self.photo_path = self.save_photo(frame)  # Save the photo path
+            self.photo_control.src = self.photo_path  # Update the UI with the photo path
+            self.update()
+
+        cap.release()
+        cv2.destroyAllWindows()
 
     def start_camera_stream(self):
         """Start a thread to capture and display the camera stream."""
@@ -54,37 +72,25 @@ class PhotoModalComponent(ft.AlertDialog):
         cap = cv2.VideoCapture(0)
 
         if not cap.isOpened():
-            return  # Do not proceed if the camera can't be opened
+            print("Ошибка: не удалось открыть камеру")
+            return
 
         while not self.stop_event.is_set():
             ret, frame = cap.read()
             if not ret:
-                continue
+                break
 
-            # Convert frame to JPEG and encode to base64
-            _, buffer = cv2.imencode('.jpg', frame)
-            jpg_as_text = base64.b64encode(buffer.tobytes()).decode('utf-8')
-
-            # Set the base64 string with the proper prefix
+            jpg_as_text = self.frame_to_base64(frame)
             self.photo_control.src_base64 = jpg_as_text
             self.update()
 
         cap.release()
+        cv2.destroyAllWindows()
 
-    def capture_and_display_photo(self, e=None):
-        """Capture a single photo and display it in the modal."""
-        cap = cv2.VideoCapture(0)
-
-        if not cap.isOpened():
-            return
-
-        ret, frame = cap.read()
-        if ret:
-            photo_path = self.save_photo(frame)
-            self.photo_control.src = photo_path
-            self.update()
-
-        cap.release()
+    def frame_to_base64(self, frame):
+        """Convert a frame to a base64-encoded JPEG string."""
+        _, buffer = cv2.imencode('.jpg', frame)
+        return base64.b64encode(buffer.tobytes()).decode('utf-8')
 
     def save_photo(self, frame):
         """Save a captured frame to a file and return the file path."""
@@ -95,13 +101,14 @@ class PhotoModalComponent(ft.AlertDialog):
         cv2.imwrite(photo_path, frame)
         return photo_path
 
-    def confirm_purchase(self, e=None):
-        """Handle the confirmation of the purchase."""
-        self.on_confirm(e)
+    def confirm_photo_capture(self, e=None):
+        """Confirm the photo capture and allow sending data later."""
+        # We only close the modal here without sending data to the server
+        print("Photo captured at:", self.photo_path)
         self.close_modal()
 
     def close_modal(self, e=None):
         """Close the modal and stop the camera stream."""
-        self.stop_event.set()
-        self.open = False
+        self.stop_event.set()  # Stop the camera stream
+        self.page.close(self)  # Close the modal using page reference
         self.update()
