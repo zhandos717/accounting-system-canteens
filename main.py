@@ -1,3 +1,5 @@
+import os
+
 import flet as ft
 from pages.home import home_page
 from pages.medical import medical_page
@@ -13,7 +15,6 @@ def main(page: ft.Page):
     # Используем новые свойства вместо устаревших
     page.window.width = 800
     page.window.height = 600
-
     # Управление маршрутами
     def route_change(route):
         page.views.clear()

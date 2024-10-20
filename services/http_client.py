@@ -1,6 +1,9 @@
 # services/http_client.py
+import os
+
 import requests
 from config import load_config
+
 
 class HttpClient:
     _instance = None
@@ -41,10 +44,15 @@ class HttpClient:
             print(f"Error: {str(e)}")
             return None
 
-    def post(self, endpoint, json=None, headers=None):
+    def post(self, endpoint, json=None, files=None, headers=None):
         url = f"{self.base_url}{endpoint}"
         try:
-            response = requests.post(url, json=json, headers=self.get_headers(headers))
+            if files:
+                response = requests.post(url, files=files, headers=self.get_headers(headers), data=json)
+
+            else:
+                response = requests.post(url, json=json, headers=self.get_headers(headers))
+
             response.raise_for_status()
             return response
         except requests.exceptions.HTTPError as err:
@@ -53,6 +61,7 @@ class HttpClient:
         except Exception as e:
             print(f"Error: {str(e)}")
             return None
+
 
 # Создание глобального экземпляра
 client = HttpClient()

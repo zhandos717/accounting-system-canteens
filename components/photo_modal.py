@@ -6,22 +6,21 @@ import threading
 import cv2
 import base64
 
-from django.utils.datetime_safe import datetime
-
 
 class PhotoModalComponent(ft.AlertDialog):
-    def __init__(self, folder, image_name, *args, **kwargs):
+    def __init__(self, folder, image_name, camera_index, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.stop_event = threading.Event()  # Событие для остановки потока
         self.photo_control = ft.Image(src="../photos/none.jpg", width=300, height=300)  # Контрол для отображения потока
         self.folder = folder
+        self.camera_index = int(camera_index)
         self.image_name = image_name
 
         # Установка содержимого модального окна
         self.content = ft.Column(
             controls=[
-                ft.Text("Сделай фотографию для подтверждения покупки."),
+                ft.Text("Тест камеры."),
                 self.photo_control,
             ],
             spacing=20,
@@ -46,7 +45,7 @@ class PhotoModalComponent(ft.AlertDialog):
 
     def capture_stream(self):
         """Захват кадров с камеры и отображение их в окне."""
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(self.camera_index)
         if not cap.isOpened():
             print("Ошибка: не удалось открыть камеру")
             return
@@ -70,7 +69,7 @@ class PhotoModalComponent(ft.AlertDialog):
 
     def capture_and_display_photo(self):
         """Функция для захвата и сохранения фото."""
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(self.camera_index)
         if not cap.isOpened():
             print("Ошибка: не удалось открыть камеру")
             return

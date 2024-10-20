@@ -30,13 +30,22 @@ def settings_page(page: ft.Page):
         border_radius=ft.border_radius.all(8),
     )
 
+    camera_index = ft.TextField(
+        label="Введите индекс камеры",
+        value=config.get("camera_index", ""),
+        width=500,
+        text_size=18,
+        filled=True,
+        border_radius=ft.border_radius.all(8),
+    )
+
     # Логика для сохранения настроек
     def save_settings(e):
         new_api_url = api_url_input.value
         new_api_token = api_url_token.value
         if new_api_url:
             # Сохраняем новые настройки
-            save_config({"api_url": new_api_url, "api_token": new_api_token})
+            save_config({"api_url": new_api_url, "api_token": new_api_token, "camera_index": camera_index.value})
 
             # Перезагружаем конфигурацию и обновляем глобальный клиент
             client.update_config()
@@ -88,6 +97,7 @@ def settings_page(page: ft.Page):
             ),
             ft.Container(api_url_input, alignment=ft.alignment.center, padding=ft.Padding(20, 10, 10, 10)),
             ft.Container(api_url_token, alignment=ft.alignment.center, padding=ft.Padding(20, 10, 10, 10)),
+            ft.Container(camera_index, alignment=ft.alignment.center, padding=ft.Padding(20, 10, 10, 10)),
             ft.Container(
                 ft.Row(
                     controls=[save_button, back_button],

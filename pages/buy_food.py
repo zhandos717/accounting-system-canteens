@@ -1,13 +1,21 @@
 # buy_food_page.py
+import os
 from datetime import datetime
 
+import cv2
 import flet as ft
 from components.banner import BannerComponent
 from components.search import SearchComponent
 from components.photo_modal import PhotoModalComponent  # Import the photo modal
+
+from services.camera_manager import CameraManager
 from services.http_client import HttpClient
 
 client = HttpClient()
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+STATIC_ROOT = os.path.join(BASE_DIR)
+
+from config import load_config
 
 
 def buy_food_page(page: ft.Page):
@@ -15,9 +23,9 @@ def buy_food_page(page: ft.Page):
     primary_color = ft.colors.BLUE_800
     background_color = ft.colors.WHITE
     card_background_color = ft.colors.GREY_200
-
     # Уведомление об ошибке (Banner)
-    show_error = BannerComponent(page)
+    show_error, show_success = BannerComponent(page)
+    config = load_config()
 
     # Корзина
     cart_items = []
@@ -123,22 +131,56 @@ def buy_food_page(page: ft.Page):
         border_radius=ft.border_radius.all(12),
     )
 
-    # Функция для подтверждения покупки
     def confirm_purchase(e):
-        show_error(f"Ошибка соединения с сервером")
-        return
+        total_amount = sum([item["price"] * item["quantity"] for item in cart_items])
+        if total_amount == 0:
+            show_error("Корзина пуста")
+            return
 
         employee_id = employee_id_input.value
-        response = client.post('/buy_food', json={"employee_id": employee_id, "items": cart_items})
+        if not employee_id:
+            show_error("Пожалуйста, введите ID сотрудника")
+            return
 
+        # Define paths and capture photo
+        path = f"{STATIC_ROOT}/photos/employees/{employee_id}"
+        now = datetime.now()
+        img_name = now.strftime("%d.%m.%Y-%H:%M:%S")
+        photo_filename = f"{img_name}.png"
+
+        try:
+            with CameraManager(camera_index=1) as camera:
+                photo_path = camera.capture_and_save_photo(path, photo_filename)
+
+                if not photo_path:
+                    show_error("Ошибка: Не удалось сохранить фото")
+                    return
+        except Exception as ex:
+            show_error(f"Ошибка захвата фото: {str(ex)}")
+            return
+
+        # Open the photo file in binary mode
+        try:
+            # Send the POST request with the file
+            response = client.post(
+                '/buy_food',
+                json={"employee_id": employee_id, "items": cart_items},
+                files={'file': open(photo_path, 'rb')}
+            )
+        except Exception as ex:
+            show_error(f"Ошибка отправки фото: {str(ex)}")
+            return
+
+        # Check the server response
         if response is None:
             show_error(f"Ошибка соединения с сервером")
         elif response.status_code == 200:
-            show_error(f"Покупка прошла успешна для {employee_id}")
+            show_success(f"Покупка прошла успешна")
             cart_items.clear()
+            employee_id_input.value = ''
             update_cart()
         else:
-            show_error(f"Ошибка: {response.json()['message']}")
+            show_error(f"Ошибка: {response.json().get('message', 'Неизвестная ошибка')}")
 
         page.update()
 
@@ -146,27 +188,14 @@ def buy_food_page(page: ft.Page):
     # buy_food_page.py
     def open_confirm_dialog(e):
         try:
-            total_amount = sum([item["price"] * item["quantity"] for item in cart_items])
-            if total_amount == 0:
-                show_error("Корзина пуста")
-                return
-
-            employee_id = employee_id_input.value
-            if not employee_id:
-                show_error("Пожалуйста, введите ID сотрудника")
-                return
-
-            path = f"./photos/employees/{employee_id}"
-
+            path = f"./photos/employees/test"
             now = datetime.now()
             img_name = now.strftime("%d.%m.%Y-%H:%M:%S")
             photo_path = f"/{img_name}.png"
 
             # Создаем экземпляр PhotoModalComponent
-            photo_modal = PhotoModalComponent(
-                folder=path,
-                image_name=photo_path
-            )
+            photo_modal = PhotoModalComponent(folder=path, image_name=photo_path,
+                                              camera_index=config.get('camera_index'))
 
             page.open(photo_modal)
             # Запускаем стрим камеры
@@ -198,6 +227,18 @@ def buy_food_page(page: ft.Page):
             ],
             alignment=ft.MainAxisAlignment.CENTER,
             tight=True,
+        ),
+        on_click=confirm_purchase
+    )
+
+    photo_button = ft.IconButton(
+        icon=ft.icons.PHOTO_CAMERA,
+        icon_size=30,
+        tooltip="Настройки камеры",
+        style=ft.ButtonStyle(
+            color=ft.colors.WHITE,
+            padding=ft.Padding(20, 10, 20, 10),
+            bgcolor=ft.cupertino_colors.ACTIVE_BLUE,
         ),
         on_click=open_confirm_dialog
     )
@@ -243,7 +284,15 @@ def buy_food_page(page: ft.Page):
                                 cart_items_list,
                                 cart_total,
                                 employee_id_input,
-                                confirm_button
+                                ft.Row(
+                                    controls=[
+                                        confirm_button,
+                                        photo_button
+                                    ],
+                                    spacing=20,
+                                    alignment=ft.MainAxisAlignment.CENTER,
+                                ),
+
                             ],
                             spacing=20,
                             alignment=ft.MainAxisAlignment.CENTER,
