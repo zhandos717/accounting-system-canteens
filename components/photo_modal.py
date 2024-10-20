@@ -21,7 +21,7 @@ class PhotoModalComponent(ft.AlertDialog):
         # Установка содержимого модального окна
         self.content = ft.Column(
             controls=[
-                ft.Text("Модальное окно с камерой."),
+                ft.Text("Сделай фотографию для подтверждения покупки."),
                 self.photo_control,
             ],
             spacing=20,
