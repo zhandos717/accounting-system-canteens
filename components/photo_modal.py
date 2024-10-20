@@ -7,6 +7,9 @@ import cv2
 import base64
 
 
+cascPath = "frontal_face.xml"
+faceCascade = cv2.CascadeClassifier(cascPath)
+
 class PhotoModalComponent(ft.AlertDialog):
     def __init__(self, folder, image_name, camera_index, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -46,14 +49,28 @@ class PhotoModalComponent(ft.AlertDialog):
     def capture_stream(self):
         """Захват кадров с камеры и отображение их в окне."""
         cap = cv2.VideoCapture(self.camera_index)
+
         if not cap.isOpened():
             print("Ошибка: не удалось открыть камеру")
             return
+
+
 
         while not self.stop_event.is_set():
             ret, frame = cap.read()
             if not ret:
                 break
+
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            faces = faceCascade.detectMultiScale(
+                gray,
+                scaleFactor=1.1,
+                minNeighbors=5,
+                minSize=(30, 30)
+            )
+
+            for (x, y, w, h) in faces:
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
             # Конвертируем кадр в JPEG и кодируем в base64
             _, buffer = cv2.imencode('.jpg', frame)

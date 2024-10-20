@@ -32,6 +32,7 @@ class CameraManager:
     def capture_and_save_photo(self, directory, filename):
         """Захватить фото и сохранить его в указанную директорию."""
         cap = cv2.VideoCapture(self.camera_index)
+
         if not cap.isOpened():
             print("Ошибка: не удалось открыть камеру")
             return
