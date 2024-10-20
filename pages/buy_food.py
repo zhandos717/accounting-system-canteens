@@ -5,6 +5,7 @@ from datetime import datetime
 import cv2
 import flet as ft
 from components.banner import BannerComponent
+from components.employee_field import EmployeeField
 from components.search import SearchComponent
 from components.photo_modal import PhotoModalComponent  # Import the photo modal
 
@@ -51,6 +52,7 @@ def buy_food_page(page: ft.Page):
                             ft.Text(f"{item['price'] * item['quantity']} тенге", size=14, color=ft.colors.BLACK),
                             ft.IconButton(
                                 icon=ft.icons.DELETE,
+                                icon_color=ft.colors.RED_500,
                                 icon_size=20,
                                 tooltip="Удалить",
                                 on_click=lambda e, index=idx: remove_from_cart(index)
@@ -124,12 +126,7 @@ def buy_food_page(page: ft.Page):
     cart_items_list = ft.ListView(expand=True, spacing=10, padding=ft.Padding(10, 10, 10, 10))
 
     # Ввод ID сотрудника (сканирование)
-    employee_id_input = ft.TextField(
-        label="Сканируйте QR-код сотрудника",
-        prefix_icon=ft.icons.QR_CODE_SCANNER,
-        text_size=20,
-        border_radius=ft.border_radius.all(12),
-    )
+    employee_id_input = EmployeeField()
 
     def confirm_purchase(e):
         total_amount = sum([item["price"] * item["quantity"] for item in cart_items])
@@ -192,10 +189,11 @@ def buy_food_page(page: ft.Page):
             now = datetime.now()
             img_name = now.strftime("%d.%m.%Y-%H:%M:%S")
             photo_path = f"/{img_name}.png"
+            camera_index = int(config.get('camera_index', 0))
 
             # Создаем экземпляр PhotoModalComponent
             photo_modal = PhotoModalComponent(folder=path, image_name=photo_path,
-                                              camera_index=config.get('camera_index'))
+                                              camera_index=camera_index)
 
             page.open(photo_modal)
             # Запускаем стрим камеры

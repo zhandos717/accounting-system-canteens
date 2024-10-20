@@ -1,5 +1,7 @@
 import flet as ft
 import requests
+
+from components.employee_field import EmployeeField
 from config import load_config
 from services.http_client import HttpClient
 
@@ -17,16 +19,7 @@ def home_page(page: ft.Page):
     btn_color = ft.colors.WHITE
 
     # Ввод ID сотрудника
-    employee_id_input = ft.TextField(
-        label="Сканируйте QR-код сотрудника",
-        prefix_icon=ft.icons.QR_CODE_SCANNER,
-        width=500,
-        height=60,
-        text_size=20,
-        filled=True,
-        bgcolor=background_color,
-        border_radius=ft.border_radius.all(8),
-    )
+    employee_id_input = EmployeeField()
 
     # Лог для вывода действий
     action_log = ft.ListView(expand=True, spacing=5, padding=ft.Padding(10, 10, 10, 10))
@@ -36,7 +29,11 @@ def home_page(page: ft.Page):
         employee_id = employee_id_input.value
         if employee_id:
             response = client.post("/attendance", json={"employee_id": employee_id})
-            if response.status_code == 200:
+
+            if response is None:
+                action_log.controls.append(
+                    ft.Text("Не удалось отправить запрос", color=ft.colors.RED_600, size=18))
+            elif response.status_code == 200:
                 action_log.controls.append(
                     ft.Text(f"Приход записан для {employee_id}", color=ft.colors.GREEN_600, size=18))
             else:
@@ -84,7 +81,7 @@ def home_page(page: ft.Page):
         adaptive=True,  # a CupertinoButton will be rendered when running on apple-platform
         bgcolor=ft.cupertino_colors.ACTIVE_GREEN,
         content=ft.Row(
-            controls=[ft.Icon(ft.icons.RESTAURANT, color=ft.colors.WHITE), ft.Text("Покупка еды", size=20)],
+            controls=[ft.Icon(ft.icons.RESTAURANT, color=ft.colors.WHITE), ft.Text("Выдача", size=20)],
             alignment=ft.MainAxisAlignment.CENTER,
         ),
         style=ft.ButtonStyle(
@@ -123,8 +120,6 @@ def home_page(page: ft.Page):
                 alignment=ft.alignment.center,
                 padding=ft.Padding(20, 10, 10, 10),
             ),
-            ft.Container(employee_id_input, alignment=ft.alignment.center, padding=ft.Padding(20, 10, 10, 10)),
-            ft.Container(attendance_button, alignment=ft.alignment.center, padding=ft.Padding(20, 10, 10, 10)),
             ft.Container(
                 ft.Row(
                     controls=[medical_check_button, buy_food_button, settings_button],
@@ -134,8 +129,23 @@ def home_page(page: ft.Page):
                 alignment=ft.alignment.center,
                 padding=ft.Padding(20, 10, 10, 10),
             ),
+            ft.Container(
+                content=ft.Column(
+                    controls=[
+                        ft.Container(employee_id_input, alignment=ft.alignment.center,
+                                     padding=ft.Padding(20, 10, 10, 10)),
+                        ft.Container(attendance_button, alignment=ft.alignment.center,
+                                     padding=ft.Padding(20, 10, 10, 10)),
+                    ],
+                    width=400,
+                    alignment=ft.alignment.center,
+                ),
+                alignment=ft.alignment.center,
+                padding=ft.Padding(20, 10, 10, 10),
+            ),
+
             ft.Container(ft.Text("История действий:", size=24, color=primary_color),
                          padding=ft.Padding(10, 10, 10, 10)),
-            ft.Container(action_log, padding=ft.Padding(20, 10, 10, 10), bgcolor=background_color),
+            ft.Container(action_log, padding=ft.Padding(20, 10, 10, 10)),
         ],
     )

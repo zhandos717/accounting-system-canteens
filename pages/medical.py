@@ -1,5 +1,7 @@
 import flet as ft
 import requests
+
+from components.employee_field import EmployeeField
 from services.http_client import HttpClient
 
 client = HttpClient()
@@ -8,22 +10,17 @@ def medical_page(page: ft.Page):
     primary_color = ft.colors.BLUE_800
     background_color = ft.colors.GREY_100
 
-    employee_id_input = ft.TextField(
-        label="Сканируйте QR-код для медосмотра",
-        prefix_icon=ft.icons.QR_CODE_SCANNER,
-        width=500,
-        height=60,
-        text_size=20,
-        filled=True,
-        bgcolor=background_color,
-        border_radius=ft.border_radius.all(8),
-    )
+    employee_id_input  = EmployeeField()
 
     def medical_check(e):
         employee_id = employee_id_input.value
         if employee_id:
             response = client.post("/medical_check", json={"employee_id": employee_id})
-            if response.status_code == 200:
+
+
+            if response is None:
+                page.snack_bar = ft.SnackBar(content=ft.Text(f"Не удалось отправить запрос"))
+            elif response.status_code == 200:
                 page.snack_bar = ft.SnackBar(content=ft.Text(f"Медосмотр пройден для {employee_id}"))
             else:
                 page.snack_bar = ft.SnackBar(content=ft.Text(f"Ошибка: {response.json()['detail']}"))
