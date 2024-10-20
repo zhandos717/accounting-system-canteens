@@ -144,9 +144,9 @@ def buy_food_page(page: ft.Page):
         now = datetime.now()
         img_name = now.strftime("%d.%m.%Y-%H:%M:%S")
         photo_filename = f"{img_name}.png"
-        camera_index = int(config.get('camera_index', 0))
+        camera_index = int(config.get('camera_index'))
         try:
-            with CameraManager(camera_index= camera_index) as camera:
+            with CameraManager(camera_index=camera_index) as camera:
                 photo_path = camera.capture_and_save_photo(path, photo_filename)
 
                 if not photo_path:
@@ -189,7 +189,7 @@ def buy_food_page(page: ft.Page):
             now = datetime.now()
             img_name = now.strftime("%d.%m.%Y-%H:%M:%S")
             photo_path = f"/{img_name}.png"
-            camera_index = int(config.get('camera_index', 0))
+            camera_index = int(config.get('camera_index'))
 
             # Создаем экземпляр PhotoModalComponent
             photo_modal = PhotoModalComponent(folder=path, image_name=photo_path,
