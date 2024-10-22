@@ -6,17 +6,16 @@ from services.http_client import HttpClient
 
 client = HttpClient()
 
+
 def medical_page(page: ft.Page):
     primary_color = ft.colors.BLUE_800
-    background_color = ft.colors.GREY_100
 
-    employee_id_input  = EmployeeField()
+    employee_id_input = EmployeeField()
 
     def medical_check(e):
         employee_id = employee_id_input.value
         if employee_id:
             response = client.post("/medical_check", json={"employee_id": employee_id})
-
 
             if response is None:
                 page.snack_bar = ft.SnackBar(content=ft.Text(f"Не удалось отправить запрос"))
