@@ -10,13 +10,10 @@ from config import load_config
 # Загрузка конфигурации
 config = load_config()
 
-# Функция для настройки параметров окна
-def setup_window(page: ft.Page):
-    page.title = "Employee Food System"
 
 # Главная функция приложения
 def main(page: ft.Page):
-    setup_window(page)
+    page.title = "Employee Food System"
 
     # Обработчик изменения маршрута
     def route_change(route):

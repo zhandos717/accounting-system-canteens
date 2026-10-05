@@ -1,4 +1,6 @@
+from datetime import datetime
 import flet as ft
+from pygments import highlight
 
 from config import save_config, load_config
 from services.http_client import HttpClient
@@ -45,27 +47,67 @@ def login_page(page: ft.Page):
     error_text = ft.Text(value="", color=ft.colors.RED, size=14)
 
     # Кнопка "Войти"
-    login_button = ft.CupertinoButton(text="Войти",
-                                      bgcolor=ft.cupertino_colors.PRIMARY,
-                                      opacity_on_click=0.3,
-                                      on_click=login)
+    login_button = ft.CupertinoButton(
+        text="Войти",
+        icon=ft.icons.LOGIN_OUTLINED,
+        bgcolor=ft.cupertino_colors.PRIMARY,
+        opacity_on_click=0.3,
+        on_click=login
+    )
 
-    # Компоновка элементов на странице
+    # Создание модального окна
+    photo_modal = ft.AlertDialog(
+        content=ft.Column(
+            controls=[
+                ft.Text('Hello, world!'),
+            ],
+        )
+    )
+
+    # Функция для открытия модального окна
+    def open_confirm_dialog(e):
+        page.open(photo_modal)
+
+    # Кнопка настроек
+    settings_button = ft.IconButton(
+        icon=ft.icons.SETTINGS,
+        tooltip="Настройки",
+        on_click=open_confirm_dialog
+    )
+
+    # Возвращаем представление страницы
     return ft.View(
         "/login",
         controls=[
+            # Контейнер для всего экрана
             ft.Column(
                 controls=[
-                    ft.Text("Вход в систему", size=24, weight=ft.FontWeight.BOLD),
-                    error_text,
-                    username_input,
-                    password_input,
-                    login_button,
+                    # Кнопка настроек в левом верхнем углу
+                    ft.Container(
+                        content=ft.Column(
+                            controls=[
+                                settings_button
+                            ]
+                        ),
+                        alignment=ft.alignment.top_left,  # Выравнивание в верхний левый угол
+                    ),
+                    # Централизованная форма логина
+                    ft.Container(
+                        content=ft.Column(
+                            controls=[
+                                ft.Text("Вход в систему", size=24, weight=ft.FontWeight.BOLD),
+                                error_text,
+                                username_input,
+                                password_input,
+                                login_button,
+                            ],
+                            alignment=ft.MainAxisAlignment.CENTER,
+                            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                        ),
+                        alignment=ft.alignment.center,  # Центрирование формы логина
+                    ),
                 ],
-                alignment=ft.MainAxisAlignment.CENTER,
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            )
+                expand=True,  # Занимаем всё пространство экрана
+            ),
         ],
-        vertical_alignment=ft.MainAxisAlignment.CENTER,
-        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
     )
